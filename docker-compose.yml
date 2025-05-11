@@ -1,0 +1,88 @@
+version: '3.8'
+networks:
+  cassandra_network:
+    driver: bridge
+
+services:
+  nodo1:
+    image: cassandra:4.1  # Usamos una versión específica para estabilidad
+    container_name: nodo1
+    mem_limit: 2g  # Limitar memoria para evitar fallos en Windows
+    ports:
+      - "9042:9042"  # Puerto CQL
+      - "7000:7000"  # Puerto gossip
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_SEEDS=nodo1
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=Rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - JVM_OPTS=-Xms1G -Xmx1G  # Limitar memoria de la JVM
+    networks:
+      - cassandra_network
+    volumes:
+      - cassandra_data_nodo1:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  nodo2:
+    image: cassandra:4.1
+    container_name: nodo2
+    mem_limit: 2g
+    ports:
+      - "9043:9042"  # Puerto CQL diferente en el host
+      - "7001:7000"  # Puerto gossip diferente
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_SEEDS=nodo1
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=Rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - JVM_OPTS=-Xms1G -Xmx1G
+    networks:
+      - cassandra_network
+    volumes:
+      - cassandra_data_nodo2:/var/lib/cassandra
+    depends_on:
+      nodo1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  nodo3:
+    image: cassandra:4.1
+    container_name: nodo3
+    mem_limit: 2g
+    ports:
+      - "9044:9042"  # Puerto CQL diferente en el host
+      - "7002:7000"  # Puerto gossip diferente
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_SEEDS=nodo1
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=Rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - JVM_OPTS=-Xms1G -Xmx1G
+    networks:
+      - cassandra_network
+    volumes:
+      - cassandra_data_nodo3:/var/lib/cassandra
+    depends_on:
+      nodo2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+volumes:
+  cassandra_data_nodo1:
+  cassandra_data_nodo2:
+  cassandra_data_nodo3:
