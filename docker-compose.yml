@@ -82,6 +82,19 @@ services:
       timeout: 5s
       retries: 60
 
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy
+    ports:
+      - "9045:9042"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - cassandra_network
+    depends_on:
+      nodo3:
+        condition: service_healthy
+
 volumes:
   cassandra_data_nodo1:
   cassandra_data_nodo2:
